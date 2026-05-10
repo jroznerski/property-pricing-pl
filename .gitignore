@@ -1,0 +1,11 @@
+.venv/
+.idea/
+__pycache__/
+*.pyc
+
+data/raw/
+data/processed/
+
+mlruns/
+
+.DS_Store

@@ -1,0 +1,16 @@
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+matplotlib
+seaborn
+jupyter
+fastapi
+uvicorn
+mlflow
+python-multipart
+pydantic
+pytest
+evidently
+streamlit
