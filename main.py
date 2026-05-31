@@ -11,7 +11,11 @@ model = joblib.load(BASE_DIR / "models" / "xgboost_model.joblib")
 with open(BASE_DIR / "models" / "feature_names.json") as f:
     FEATURE_NAMES = json.load(f)
 
-app = FastAPI(title="Warsaw Apartment Price Predictor")
+app = FastAPI(
+    title="Warsaw Apartment Price Predictor",
+    version="1.0.0",
+    description="Predicts apartment prices in Warsaw based on location and property features.",
+)
 
 
 class ApartmentFeatures(BaseModel):
