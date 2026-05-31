@@ -8,4 +8,6 @@ data/processed/
 
 mlruns/
 
+models/*.joblib
+
 .DS_Store

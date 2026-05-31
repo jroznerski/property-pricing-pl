@@ -1,16 +1,60 @@
-# This is a sample Python script.
+import json
+from pathlib import Path
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import joblib
+import numpy as np
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+
+BASE_DIR = Path(__file__).parent
+model = joblib.load(BASE_DIR / "models" / "xgboost_model.joblib")
+with open(BASE_DIR / "models" / "feature_names.json") as f:
+    FEATURE_NAMES = json.load(f)
+
+app = FastAPI(title="Warsaw Apartment Price Predictor")
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+class ApartmentFeatures(BaseModel):
+    squareMeters: float = Field(..., gt=0, example=55.0)
+    floor: float | None = Field(None, example=3.0)
+    floorCount: float | None = Field(None, example=5.0)
+    buildYear: float | None = Field(None, example=2005.0)
+    latitude: float = Field(..., example=52.23)
+    longitude: float = Field(..., example=21.01)
+    centreDistance: float = Field(..., example=5.0)
+    poiCount: float = Field(..., example=20.0)
+    schoolDistance: float = Field(..., example=0.3)
+    clinicDistance: float = Field(..., example=0.5)
+    postOfficeDistance: float = Field(..., example=0.4)
+    kindergartenDistance: float = Field(..., example=0.2)
+    restaurantDistance: float = Field(..., example=0.2)
+    collegeDistance: float = Field(..., example=1.5)
+    pharmacyDistance: float = Field(..., example=0.3)
+    date: int = Field(..., example=5, description="Encoded month: 0=01.2024 ... 10=12.2023")
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+class PredictionResponse(BaseModel):
+    predicted_price: float
+    predicted_price_formatted: str
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+@app.get("/")
+def root():
+    return {"status": "ok", "model_features": FEATURE_NAMES}
+
+
+@app.post("/predict", response_model=PredictionResponse)
+def predict(features: ApartmentFeatures):
+    data = features.model_dump()
+
+    try:
+        input_values = [data[f] if data[f] is not None else np.nan for f in FEATURE_NAMES]
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail=f"Missing feature: {e}")
+
+    prediction = model.predict([input_values])[0]
+
+    return PredictionResponse(
+        predicted_price=round(float(prediction)),
+        predicted_price_formatted=f"{round(float(prediction)):,} PLN"
+    )
