@@ -22,5 +22,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.api.txt pytest
 
+      - name: Create dummy model for tests
+        run: |
+          python - <<'EOF'
+          import json, joblib, numpy as np, xgboost as xgb
+          from pathlib import Path
+          feature_names = json.loads(Path("models/feature_names.json").read_text())
+          X = np.random.rand(50, len(feature_names))
+          y = np.random.rand(50) * 500_000 + 200_000
+          model = xgb.XGBRegressor(n_estimators=3, tree_method="hist")
+          model.fit(X, y)
+          joblib.dump(model, "models/xgboost_model.joblib")
+          EOF
+
       - name: Run tests
         run: pytest tests/ -v
