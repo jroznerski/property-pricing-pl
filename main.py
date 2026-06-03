@@ -3,6 +3,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+import shap
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -10,6 +11,8 @@ BASE_DIR = Path(__file__).parent
 model = joblib.load(BASE_DIR / "models" / "xgboost_model.joblib")
 with open(BASE_DIR / "models" / "feature_names.json") as f:
     FEATURE_NAMES = json.load(f)
+
+explainer = shap.TreeExplainer(model)
 
 app = FastAPI(
     title="Warsaw Apartment Price Predictor",
@@ -40,6 +43,8 @@ class ApartmentFeatures(BaseModel):
 class PredictionResponse(BaseModel):
     predicted_price: float
     predicted_price_formatted: str
+    base_price: float
+    contributions: dict[str, float]
 
 
 @app.get("/")
@@ -56,9 +61,17 @@ def predict(features: ApartmentFeatures):
     except KeyError as e:
         raise HTTPException(status_code=400, detail=f"Missing feature: {e}")
 
-    prediction = model.predict([input_values])[0]
+    input_array = np.array([input_values])
+    prediction = model.predict(input_array)[0]
+    shap_values = explainer.shap_values(input_array)[0]
+
+    contributions = {
+        name: round(float(val)) for name, val in zip(FEATURE_NAMES, shap_values)
+    }
 
     return PredictionResponse(
         predicted_price=round(float(prediction)),
-        predicted_price_formatted=f"{round(float(prediction)):,} PLN"
+        predicted_price_formatted=f"{round(float(prediction)):,} PLN",
+        base_price=round(float(explainer.expected_value)),
+        contributions=contributions,
     )

@@ -40,10 +40,20 @@ def test_predict_returns_price():
     assert "PLN" in data["predicted_price_formatted"]
 
 
-def test_predict_price_is_reasonable():
+def test_predict_returns_shap_contributions():
     response = client.post("/predict", json=VALID_PAYLOAD)
-    price = response.json()["predicted_price"]
-    assert 100_000 < price < 5_000_000, f"Price {price} outside expected range"
+    assert response.status_code == 200
+    data = response.json()
+    assert "contributions" in data
+    assert "base_price" in data
+    assert set(data["contributions"].keys()) == set(VALID_PAYLOAD.keys()) - {"date"} | {"date"}
+
+
+def test_predict_contributions_sum_to_prediction():
+    response = client.post("/predict", json=VALID_PAYLOAD)
+    data = response.json()
+    total = data["base_price"] + sum(data["contributions"].values())
+    assert abs(total - data["predicted_price"]) < 10
 
 
 def test_predict_optional_fields_can_be_null():

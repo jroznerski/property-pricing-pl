@@ -1,7 +1,9 @@
+import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
 import requests
 import streamlit as st
-
-import os
 API_URL = os.getenv("API_URL", "http://localhost:8000") + "/predict"
 
 DATE_OPTIONS = {
@@ -87,6 +89,25 @@ if st.button("Predict Price", type="primary", use_container_width=True):
             )
             price_per_sqm = result["predicted_price"] / square_meters
             st.caption(f"≈ {price_per_sqm:,.0f} PLN/sqm")
+
+            st.subheader("Why this price?")
+            st.caption(f"Average Warsaw apartment: {result['base_price']:,.0f} PLN. "
+                       f"Feature contributions show how this apartment differs.")
+
+            contribs = pd.Series(result["contributions"]).sort_values(key=abs, ascending=True)
+            colors = ["#e05c5c" if v > 0 else "#5c9be0" for v in contribs]
+
+            fig, ax = plt.subplots(figsize=(8, 5))
+            bars = ax.barh(contribs.index, contribs.values, color=colors)
+            ax.axvline(0, color="black", linewidth=0.8)
+            ax.xaxis.set_major_formatter(
+                plt.FuncFormatter(lambda x, _: f"{x/1000:+.0f}k PLN")
+            )
+            ax.set_xlabel("Contribution to price (PLN)")
+            ax.set_title("Feature contributions (SHAP)")
+            fig.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
 
         except requests.exceptions.ConnectionError:
             st.error("Cannot connect to the API. Make sure `uvicorn main:app --reload` is running.")
