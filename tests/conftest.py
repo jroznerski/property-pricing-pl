@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import shap
 import xgboost as xgb
 
 FEATURE_NAMES = json.loads(
@@ -19,9 +18,8 @@ def patch_model(monkeypatch):
 
     tiny_model = xgb.XGBRegressor(n_estimators=5, tree_method="hist")
     tiny_model.fit(X, y)
-    tiny_explainer = shap.TreeExplainer(tiny_model)
 
     import main
     monkeypatch.setattr(main, "model", tiny_model)
+    monkeypatch.setattr(main, "booster", tiny_model.get_booster())
     monkeypatch.setattr(main, "FEATURE_NAMES", FEATURE_NAMES)
-    monkeypatch.setattr(main, "explainer", tiny_explainer)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
-import shap
+import xgboost as xgb
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -12,7 +12,7 @@ model = joblib.load(BASE_DIR / "models" / "xgboost_model.joblib")
 with open(BASE_DIR / "models" / "feature_names.json") as f:
     FEATURE_NAMES = json.load(f)
 
-explainer = shap.TreeExplainer(model)
+booster = model.get_booster()
 
 app = FastAPI(
     title="Warsaw Apartment Price Predictor",
@@ -61,17 +61,21 @@ def predict(features: ApartmentFeatures):
     except KeyError as e:
         raise HTTPException(status_code=400, detail=f"Missing feature: {e}")
 
-    input_array = np.array([input_values])
-    prediction = model.predict(input_array)[0]
-    shap_values = explainer.shap_values(input_array)[0]
+    dmatrix = xgb.DMatrix(np.array([input_values]), feature_names=FEATURE_NAMES)
+    prediction = float(booster.predict(dmatrix)[0])
+
+    # pred_contribs shape: (1, n_features + 1) — last column is the bias (base value)
+    contribs = booster.predict(dmatrix, pred_contribs=True)[0]
+    shap_values = contribs[:-1]
+    base_value = contribs[-1]
 
     contributions = {
         name: round(float(val)) for name, val in zip(FEATURE_NAMES, shap_values)
     }
 
     return PredictionResponse(
-        predicted_price=round(float(prediction)),
-        predicted_price_formatted=f"{round(float(prediction)):,} PLN",
-        base_price=round(float(explainer.expected_value)),
+        predicted_price=round(prediction),
+        predicted_price_formatted=f"{round(prediction):,} PLN",
+        base_price=round(float(base_value)),
         contributions=contributions,
     )
