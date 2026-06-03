@@ -12,3 +12,6 @@ mlruns/
 models/*.joblib
 
 .DS_Store
+
+reports/
+test_report.html
