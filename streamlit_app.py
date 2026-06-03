@@ -1,7 +1,8 @@
 import requests
 import streamlit as st
 
-API_URL = "http://localhost:8000/predict"
+import os
+API_URL = os.getenv("API_URL", "http://localhost:8000") + "/predict"
 
 DATE_OPTIONS = {
     "August 2023": 6,
