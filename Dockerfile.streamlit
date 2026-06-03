@@ -6,6 +6,10 @@ COPY requirements.streamlit.txt .
 RUN pip install --no-cache-dir -r requirements.streamlit.txt
 
 COPY streamlit_app.py .
+COPY pages/ pages/
+COPY src/ src/
+COPY models/ models/
+COPY data/processed/ data/processed/
 
 EXPOSE 8501
 
