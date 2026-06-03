@@ -19,22 +19,22 @@ app = FastAPI(
 
 
 class ApartmentFeatures(BaseModel):
-    squareMeters: float = Field(..., gt=0, example=55.0)
-    floor: float | None = Field(None, example=3.0)
-    floorCount: float | None = Field(None, example=5.0)
-    buildYear: float | None = Field(None, example=2005.0)
-    latitude: float = Field(..., example=52.23)
-    longitude: float = Field(..., example=21.01)
-    centreDistance: float = Field(..., example=5.0)
-    poiCount: float = Field(..., example=20.0)
-    schoolDistance: float = Field(..., example=0.3)
-    clinicDistance: float = Field(..., example=0.5)
-    postOfficeDistance: float = Field(..., example=0.4)
-    kindergartenDistance: float = Field(..., example=0.2)
-    restaurantDistance: float = Field(..., example=0.2)
-    collegeDistance: float = Field(..., example=1.5)
-    pharmacyDistance: float = Field(..., example=0.3)
-    date: int = Field(..., example=5, description="Encoded month: 0=01.2024 ... 10=12.2023")
+    squareMeters: float = Field(..., gt=0, json_schema_extra={"example": 55.0})
+    floor: float | None = Field(None, json_schema_extra={"example": 3.0})
+    floorCount: float | None = Field(None, json_schema_extra={"example": 5.0})
+    buildYear: float | None = Field(None, json_schema_extra={"example": 2005.0})
+    latitude: float = Field(..., json_schema_extra={"example": 52.23})
+    longitude: float = Field(..., json_schema_extra={"example": 21.01})
+    centreDistance: float = Field(..., json_schema_extra={"example": 5.0})
+    poiCount: float = Field(..., json_schema_extra={"example": 20.0})
+    schoolDistance: float = Field(..., json_schema_extra={"example": 0.3})
+    clinicDistance: float = Field(..., json_schema_extra={"example": 0.5})
+    postOfficeDistance: float = Field(..., json_schema_extra={"example": 0.4})
+    kindergartenDistance: float = Field(..., json_schema_extra={"example": 0.2})
+    restaurantDistance: float = Field(..., json_schema_extra={"example": 0.2})
+    collegeDistance: float = Field(..., json_schema_extra={"example": 1.5})
+    pharmacyDistance: float = Field(..., json_schema_extra={"example": 0.3})
+    date: int = Field(..., description="Encoded month: 0=01.2024 ... 10=12.2023", json_schema_extra={"example": 5})
 
 
 class PredictionResponse(BaseModel):
