@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -9,6 +10,9 @@ from src.inference.predictor import ApartmentPricePredictor
 BASE_DIR = Path(__file__).parent
 predictor = ApartmentPricePredictor(BASE_DIR / "models")
 pred_logger = PredictionLogger(BASE_DIR / "data" / "predictions.db")
+
+_info_path = BASE_DIR / "models" / "model_info.json"
+MODEL_INFO: dict = json.loads(_info_path.read_text()) if _info_path.exists() else {}
 
 app = FastAPI(
     title="Warsaw Apartment Price Predictor",
@@ -51,6 +55,11 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/model-info")
+def model_info():
+    return {**MODEL_INFO, "features": predictor.feature_names}
 
 
 def _make_response(feature_dict: dict, result) -> PredictionResponse:

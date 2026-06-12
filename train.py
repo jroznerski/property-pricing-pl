@@ -126,12 +126,24 @@ def train(
         log.info("RMSE: %s PLN  |  MAPE: %.2f%%", f"{rmse:,.0f}", mape)
 
     # -----------------------------------------------------------------------
-    # Save model + feature list
+    # Save model + feature list + metadata
     # -----------------------------------------------------------------------
+    from datetime import datetime, timezone
+
     MODELS_DIR.mkdir(exist_ok=True)
     joblib.dump(model, model_out)
     features_path = MODELS_DIR / "feature_names.json"
     features_path.write_text(json.dumps(features_in_data))
+
+    model_info = {
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "data_source": str(data),
+        "n_samples": len(df),
+        "rmse": round(rmse),
+        "mape": round(mape, 2),
+        "n_features": len(features_in_data),
+    }
+    (MODELS_DIR / "model_info.json").write_text(json.dumps(model_info, indent=2))
 
     log.info("Model saved to %s", model_out)
     log.info("Features saved to %s", features_path)

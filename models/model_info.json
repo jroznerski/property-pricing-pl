@@ -1,0 +1,8 @@
+{
+  "trained_at": "2026-06-04T11:25:00+00:00",
+  "data_source": "data/raw (Kaggle Warsaw apartments 2023-08 to 2024-06)",
+  "n_samples": 14998,
+  "rmse": 136000,
+  "mape": 8.4,
+  "n_features": 16
+}

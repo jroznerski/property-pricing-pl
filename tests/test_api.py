@@ -30,6 +30,14 @@ def test_health():
     assert response.json()["status"] == "ok"
 
 
+def test_model_info():
+    response = client.get("/model-info")
+    assert response.status_code == 200
+    data = response.json()
+    assert "features" in data
+    assert isinstance(data["features"], list)
+
+
 def test_root_returns_ok():
     response = client.get("/")
     assert response.status_code == 200
