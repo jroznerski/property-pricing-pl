@@ -43,6 +43,7 @@ class ApartmentFeatures(BaseModel):
 class PredictionResponse(BaseModel):
     predicted_price: float
     predicted_price_formatted: str
+    price_per_sqm: float
     base_price: float
     contributions: dict[str, float]
 
@@ -66,6 +67,7 @@ def _make_response(feature_dict: dict, result) -> PredictionResponse:
     return PredictionResponse(
         predicted_price=result.predicted_price,
         predicted_price_formatted=f"{result.predicted_price:,} PLN",
+        price_per_sqm=round(result.predicted_price / feature_dict["squareMeters"]),
         base_price=result.base_price,
         contributions=result.contributions,
     )
