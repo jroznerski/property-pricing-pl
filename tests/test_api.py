@@ -78,3 +78,32 @@ def test_predict_negative_area_returns_422():
     payload = {**VALID_PAYLOAD, "squareMeters": -10.0}
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
+
+
+def test_batch_predict_returns_list():
+    response = client.post("/batch-predict", json=[VALID_PAYLOAD, VALID_PAYLOAD])
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+
+
+def test_batch_predict_each_item_has_price():
+    second = {**VALID_PAYLOAD, "squareMeters": 80.0}
+    response = client.post("/batch-predict", json=[VALID_PAYLOAD, second])
+    data = response.json()
+    for item in data:
+        assert "predicted_price" in item
+        assert "PLN" in item["predicted_price_formatted"]
+        assert "contributions" in item
+
+
+def test_batch_predict_empty_list_returns_422():
+    response = client.post("/batch-predict", json=[])
+    assert response.status_code == 422
+
+
+def test_batch_predict_invalid_item_returns_422():
+    bad = {k: v for k, v in VALID_PAYLOAD.items() if k != "squareMeters"}
+    response = client.post("/batch-predict", json=[VALID_PAYLOAD, bad])
+    assert response.status_code == 422

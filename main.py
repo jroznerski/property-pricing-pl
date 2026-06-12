@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from src.inference.logger import PredictionLogger
@@ -53,14 +53,31 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/predict", response_model=PredictionResponse)
-def predict(features: ApartmentFeatures):
-    feature_dict = features.model_dump()
-    result = predictor.predict(feature_dict)
-    pred_logger.log(feature_dict, result)
+def _make_response(feature_dict: dict, result) -> PredictionResponse:
     return PredictionResponse(
         predicted_price=result.predicted_price,
         predicted_price_formatted=f"{result.predicted_price:,} PLN",
         base_price=result.base_price,
         contributions=result.contributions,
     )
+
+
+@app.post("/predict", response_model=PredictionResponse)
+def predict(features: ApartmentFeatures):
+    feature_dict = features.model_dump()
+    result = predictor.predict(feature_dict)
+    pred_logger.log(feature_dict, result)
+    return _make_response(feature_dict, result)
+
+
+@app.post("/batch-predict", response_model=list[PredictionResponse])
+def batch_predict(apartments: list[ApartmentFeatures]):
+    if not apartments:
+        raise HTTPException(status_code=422, detail="Request body must contain at least one apartment.")
+    responses = []
+    for features in apartments:
+        feature_dict = features.model_dump()
+        result = predictor.predict(feature_dict)
+        pred_logger.log(feature_dict, result)
+        responses.append(_make_response(feature_dict, result))
+    return responses
