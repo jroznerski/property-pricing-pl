@@ -40,6 +40,12 @@ with col2:
     centre_distance = st.number_input("Distance to city centre (km)", min_value=0.0, max_value=20.0, value=5.0, step=0.1)
     poi_count = st.number_input("Points of interest nearby", min_value=0, max_value=150, value=20, step=1)
 
+st.map(
+    pd.DataFrame({"lat": [latitude], "lon": [longitude]}),
+    zoom=13,
+    use_container_width=True,
+)
+
 st.subheader("Distances to amenities (km)")
 col3, col4 = st.columns(2)
 
