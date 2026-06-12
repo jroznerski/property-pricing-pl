@@ -10,6 +10,7 @@ mlruns/
 *.db
 
 models/*.joblib
+!models/xgboost_model.joblib
 
 .DS_Store
 
