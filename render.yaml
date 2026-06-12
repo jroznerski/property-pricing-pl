@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: property-pricing-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    port: 8000
+    plan: free
+
+  - type: web
+    name: property-pricing-streamlit
+    runtime: docker
+    dockerfilePath: ./Dockerfile.streamlit
+    port: 8501
+    plan: free
+    envVars:
+      - key: API_URL
+        fromService:
+          type: web
+          name: property-pricing-api
+          property: host

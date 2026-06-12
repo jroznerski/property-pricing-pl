@@ -14,9 +14,14 @@ st.markdown(
 
 if st.button("Generate Report", type="primary", use_container_width=True):
     with st.spinner("Running Evidently — this takes ~30 seconds..."):
-        from src.monitoring.monitor import generate_report
-        path = generate_report()
-
-    st.success("Report ready.")
-    html = path.read_text(encoding="utf-8")
-    components.html(html, height=900, scrolling=True)
+        try:
+            from src.monitoring.monitor import generate_report
+            path = generate_report()
+            st.success("Report ready.")
+            html = path.read_text(encoding="utf-8")
+            components.html(html, height=900, scrolling=True)
+        except FileNotFoundError:
+            st.error(
+                "Processed data not found. Run the training pipeline locally first "
+                "to generate `data/processed/warsaw_apartments.parquet`."
+            )
