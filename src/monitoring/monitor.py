@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import joblib
 import pandas as pd
 from pathlib import Path
@@ -8,6 +9,21 @@ from evidently.presets import RegressionPreset, DataDriftPreset
 
 BASE_DIR = Path(__file__).parent.parent.parent
 REPORTS_DIR = BASE_DIR / "reports"
+PREDICTIONS_DB = BASE_DIR / "data" / "predictions.db"
+MIN_LOGGED_ROWS = 50
+
+
+def _load_logged_predictions(feature_names: list[str]) -> pd.DataFrame | None:
+    if not PREDICTIONS_DB.exists():
+        return None
+    conn = sqlite3.connect(PREDICTIONS_DB)
+    df = pd.read_sql("SELECT * FROM predictions", conn)
+    conn.close()
+    if len(df) < MIN_LOGGED_ROWS:
+        return None
+    df = df.rename(columns={"predicted_price": "prediction"})
+    df["target"] = df["prediction"]  # no ground truth yet; use prediction as proxy
+    return df[feature_names + ["prediction", "target"]]
 
 
 def generate_report(output_path: Path = None) -> Path:
@@ -25,9 +41,13 @@ def generate_report(output_path: Path = None) -> Path:
     ref["target"] = y_train.values
     ref["prediction"] = model.predict(X_train)
 
-    cur = X_test.copy()
-    cur["target"] = y_test.values
-    cur["prediction"] = model.predict(X_test)
+    logged = _load_logged_predictions(feature_names)
+    if logged is not None:
+        cur = logged
+    else:
+        cur = X_test.copy()
+        cur["target"] = y_test.values
+        cur["prediction"] = model.predict(X_test)
 
     data_def = DataDefinition(
         regression=[Regression(target="target", prediction="prediction")]

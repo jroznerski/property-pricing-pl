@@ -1,18 +1,14 @@
-import json
 from pathlib import Path
 
-import joblib
-import numpy as np
-import xgboost as xgb
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-BASE_DIR = Path(__file__).parent
-model = joblib.load(BASE_DIR / "models" / "xgboost_model.joblib")
-with open(BASE_DIR / "models" / "feature_names.json") as f:
-    FEATURE_NAMES = json.load(f)
+from src.inference.logger import PredictionLogger
+from src.inference.predictor import ApartmentPricePredictor
 
-booster = model.get_booster()
+BASE_DIR = Path(__file__).parent
+predictor = ApartmentPricePredictor(BASE_DIR / "models")
+pred_logger = PredictionLogger(BASE_DIR / "data" / "predictions.db")
 
 app = FastAPI(
     title="Warsaw Apartment Price Predictor",
@@ -49,33 +45,22 @@ class PredictionResponse(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "model_features": FEATURE_NAMES}
+    return {"status": "ok", "model_features": predictor.feature_names}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(features: ApartmentFeatures):
-    data = features.model_dump()
-
-    try:
-        input_values = [data[f] if data[f] is not None else np.nan for f in FEATURE_NAMES]
-    except KeyError as e:
-        raise HTTPException(status_code=400, detail=f"Missing feature: {e}")
-
-    dmatrix = xgb.DMatrix(np.array([input_values]), feature_names=FEATURE_NAMES)
-    prediction = float(booster.predict(dmatrix)[0])
-
-    # pred_contribs shape: (1, n_features + 1) — last column is the bias (base value)
-    contribs = booster.predict(dmatrix, pred_contribs=True)[0]
-    shap_values = contribs[:-1]
-    base_value = contribs[-1]
-
-    contributions = {
-        name: round(float(val)) for name, val in zip(FEATURE_NAMES, shap_values)
-    }
-
+    feature_dict = features.model_dump()
+    result = predictor.predict(feature_dict)
+    pred_logger.log(feature_dict, result)
     return PredictionResponse(
-        predicted_price=round(prediction),
-        predicted_price_formatted=f"{round(prediction):,} PLN",
-        base_price=round(float(base_value)),
-        contributions=contributions,
+        predicted_price=result.predicted_price,
+        predicted_price_formatted=f"{result.predicted_price:,} PLN",
+        base_price=result.base_price,
+        contributions=result.contributions,
     )
