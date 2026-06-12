@@ -1,6 +1,7 @@
 # Real Estate ML System
 
-**Live demo:** https://property-pricing-streamlit.onrender.com
+**Live demo:** https://property-pricing-streamlit.onrender.com  
+**API docs:** https://property-pricing-pl.onrender.com/docs
 
 Production-style machine learning system for predicting apartment prices in Warsaw. Trained on ~19 months of Polish real estate listings (Aug 2023 – Jun 2024) and refreshed weekly with live Otodom data.
 
