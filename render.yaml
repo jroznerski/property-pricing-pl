@@ -14,7 +14,4 @@ services:
     plan: free
     envVars:
       - key: API_URL
-        fromService:
-          type: web
-          name: property-pricing-api
-          property: host
+        value: https://property-pricing-pl.onrender.com
